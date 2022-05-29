@@ -3,7 +3,8 @@
 - SparkSession
 - getOrCreate
 - getActiveSession
-- ```
+- 
+```
 from pyspark.sql import SparkSession
 spark = SparkSession.builder.appName('SparkByExamples.com').getOrCreate()
 data = [(1,"Robert"), (2,"Julia")]
