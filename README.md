@@ -11,6 +11,11 @@
 - Array constant column (The Scala API has a typedLit function to handle complex types like arrays, but there is no such method in the PySpark API, so hacks are required.)
 - Working with PySpark ArrayType Columns (https://mungingdata.com/pyspark/array-arraytype-list/)
 - Create ArrayType column (https://mungingdata.com/pyspark/array-arraytype-list/)
+- List aggregations (collect_list)
+- Exploding an array into multiple rows (https://mungingdata.com/pyspark/array-arraytype-list/)
+- PySpark arrays can only hold one type (Python lists can hold values with different types.)
+- select and add columns in PySpark (https://mungingdata.com/pyspark/select-add-columns-withcolumn/)
+- Add multiple columns (withColumns)
 ```
 from pyspark.sql import SparkSession
 spark = SparkSession.builder.appName('SparkByExamples.com').getOrCreate()
@@ -247,3 +252,271 @@ df.show()
 +---+-------+
 ```
 The explicit syntax makes it clear that we’re creating an ArrayType column.
+
+
+# Exploding an array into multiple rows
+
+A PySpark array can be exploded into multiple rows, the opposite of collect_list.
+
+Create a DataFrame with an ArrayType column:
+```
+df = spark.createDataFrame(
+    [("abc", [1, 2]), ("cd", [3, 4])], ["id", "numbers"]
+)
+df.show()
++---+-------+
+| id|numbers|
++---+-------+
+|abc| [1, 2]|
+| cd| [3, 4]|
++---+-------+
+```
+Explode the array column, so there is only one number per DataFrame row.
+```
+df.select(col("id"), explode(col("numbers")).alias("number")).show()
++---+------+
+| id|number|
++---+------+
+|abc|     1|
+|abc|     2|
+| cd|     3|
+| cd|     4|
++---+------+
+```
+collect_list collapses multiple rows into a single row. explode does the opposite and expands an array into multiple rows.
+
+
+# select basic use case
+Create a DataFrame with three columns.
+```
+df = spark.createDataFrame(
+    [("jose", 1, "mexico"), ("li", 2, "china"), ("sandy", 3, "usa")],
+    ["name", "age", "country"],
+)
+df.show()
++-----+---+-------+
+| name|age|country|
++-----+---+-------+
+| jose|  1| mexico|
+|   li|  2|  china|
+|sandy|  3|    usa|
++-----+---+-------+
+```
+Select the age and name columns:
+```
+df.select("age", "name").show()
++---+-----+
+|age| name|
++---+-----+
+|  1| jose|
+|  2|   li|
+|  3|sandy|
++---+-----+
+```
+The select method takes column names as arguments.
+
+If you try to select a column that doesn’t exist in the DataFrame, your code will error out. Here’s the error you’ll see if you run `df.select("age", "name", "whatever")`
+
+The select method can also take an array of column names as the argument.
+```
+df.select(["country", "name"]).show()
++-------+-----+
+|country| name|
++-------+-----+
+| mexico| jose|
+|  china|   li|
+|    usa|sandy|
++-------+-----+
+```
+
+```
+df.select([col("age")]).show()
++---+
+|age|
++---+
+|  1|
+|  2|
+|  3|
++---+
+```
+
+# withColumn basic use case
+
+withColumn adds a column to a DataFrame.
+
+Create a DataFrame with two columns:
+
+```
+df = spark.createDataFrame(
+    [("jose", 1), ("li", 2), ("luisa", 3)], ["name", "age"]
+)
+df.show()
+```
+
+```
++-----+---+
+| name|age|
++-----+---+
+| jose|  1|
+|   li|  2|
+|luisa|  3|
++-----+---+
+```
+
+Append a greeting column to the DataFrame with the string hello:
+
+```
+df.withColumn("greeting", lit("hello")).show()
+```
+
+```
++-----+---+--------+
+| name|age|greeting|
++-----+---+--------+
+| jose|  1|   hello|
+|   li|  2|   hello|
+|luisa|  3|   hello|
++-----+---+--------+
+```
+
+Now let’s use withColumn to append an upper_name column that uppercases the name column.
+```
+df.withColumn("upper_name", upper(col("name"))).show()
++-----+---+----------+
+| name|age|upper_name|
++-----+---+----------+
+| jose|  1|      JOSE|
+|   li|  2|        LI|
+|luisa|  3|     LUISA|
++-----+---+----------+
+```
+withColumn is often used to append columns based on the values of other columns.
+
+# Add multiple columns (withColumns)
+
+There isn’t a withColumns method, so most PySpark newbies call withColumn multiple times when they need to add multiple columns to a DataFrame.
+
+Create a simple DataFrame:
+```
+df = spark.createDataFrame(
+    [("cali", "colombia"), ("london", "uk")],
+    ["city", "country"],
+)
+df.show()
++------+--------+
+|  city| country|
++------+--------+
+|  cali|colombia|
+|london|      uk|
++------+--------+
+```
+Here’s how to append two columns with constant values to the DataFrame using select:
+```
+actual = df.select(["*", lit("val1").alias("col1"), lit("val2").alias("col2")])
+actual.show()
++------+--------+----+----+
+|  city| country|col1|col2|
++------+--------+----+----+
+|  cali|colombia|val1|val2|
+|london|      uk|val1|val2|
++------+--------+----+----+
+```
+The * selects all of the existing DataFrame columns and the other columns are appended. This design pattern is how select can append columns to a DataFrame, just like withColumn.
+
+The code is a bit verbose, but it’s better than the following code that calls withColumn multiple times:
+```
+df.withColumn("col1", lit("val1")).withColumn("col2", lit("val2"))
+```
+There is a hidden cost of withColumn and calling it multiple times should be avoided.
+
+The Spark contributors are considering adding withColumns to the API, which would be the best option. That’d give the community a clean and performant way to add multiple columns.
+
+
+# RDD vs dataframe
+
+
+# how to create dataframe
+
+```
+Create DataFrames
+This example uses the Row class from Spark SQL to create several DataFrames. The contents of a few of these DataFrames are then printed.
+
+Python
+Copy to clipboardCopy
+# import pyspark class Row from module sql
+from pyspark.sql import *
+
+# Create Example Data - Departments and Employees
+
+# Create the Departments
+department1 = Row(id='123456', name='Computer Science')
+department2 = Row(id='789012', name='Mechanical Engineering')
+department3 = Row(id='345678', name='Theater and Drama')
+department4 = Row(id='901234', name='Indoor Recreation')
+
+# Create the Employees
+Employee = Row("firstName", "lastName", "email", "salary")
+employee1 = Employee('michael', 'armbrust', 'no-reply@berkeley.edu', 100000)
+employee2 = Employee('xiangrui', 'meng', 'no-reply@stanford.edu', 120000)
+employee3 = Employee('matei', None, 'no-reply@waterloo.edu', 140000)
+employee4 = Employee(None, 'wendell', 'no-reply@berkeley.edu', 160000)
+employee5 = Employee('michael', 'jackson', 'no-reply@neverla.nd', 80000)
+
+# Create the DepartmentWithEmployees instances from Departments and Employees
+departmentWithEmployees1 = Row(department=department1, employees=[employee1, employee2])
+departmentWithEmployees2 = Row(department=department2, employees=[employee3, employee4])
+departmentWithEmployees3 = Row(department=department3, employees=[employee5, employee4])
+departmentWithEmployees4 = Row(department=department4, employees=[employee2, employee3])
+
+print(department1)
+print(employee2)
+print(departmentWithEmployees1.employees[0].email)
+Output:
+
+Copy to clipboardCopy
+Row(id='123456', name='Computer Science')
+Row(firstName='xiangrui', lastName='meng', email='no-reply@stanford.edu', salary=120000)
+no-reply@berkeley.edu
+```
+
+# Create DataFrames from a list of the rows
+
+https://docs.databricks.com/spark/latest/dataframes-datasets/introduction-to-dataframes-python.html
+
+```
+This example uses the createDataFrame method of the SparkSession (which is represented by the Databricks-provided spark variable) to create a DataFrame from a list of rows from the previous example.
+
+Python
+Copy to clipboardCopy
+departmentsWithEmployeesSeq1 = [departmentWithEmployees1, departmentWithEmployees2]
+df1 = spark.createDataFrame(departmentsWithEmployeesSeq1)
+
+df1.show(truncate=False)
+
+departmentsWithEmployeesSeq2 = [departmentWithEmployees3, departmentWithEmployees4]
+df2 = spark.createDataFrame(departmentsWithEmployeesSeq2)
+
+df2.show(truncate=False)
+Output:
+
+Copy to clipboardCopy
++--------------------------------+-----------------------------------------------------------------------------------------------------+
+|department                      |employees                                                                                            |
++--------------------------------+-----------------------------------------------------------------------------------------------------+
+|{123456, Computer Science}      |[{michael, armbrust, no-reply@berkeley.edu, 100000}, {xiangrui, meng, no-reply@stanford.edu, 120000}]|
+|{789012, Mechanical Engineering}|[{matei, null, no-reply@waterloo.edu, 140000}, {null, wendell, no-reply@berkeley.edu, 160000}]       |
++--------------------------------+-----------------------------------------------------------------------------------------------------+
+
++---------------------------+------------------------------------------------------------------------------------------------+
+|department                 |employees                                                                                       |
++---------------------------+------------------------------------------------------------------------------------------------+
+|{345678, Theater and Drama}|[{michael, jackson, no-reply@neverla.nd, 80000}, {null, wendell, no-reply@berkeley.edu, 160000}]|
+|{901234, Indoor Recreation}|[{xiangrui, meng, no-reply@stanford.edu, 120000}, {matei, null, no-reply@waterloo.edu, 140000}] |
++---------------------------+------------------------------------------------------------------------------------------------+
+```
+
+# SQS
+
+
+I'm setting an API Gateway for a monitoring solution. It is sending a massive amount of message from terminals to the API Gateway and triggering lambda functions which make inserts in a MongoDB database running in EC2
+
