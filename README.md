@@ -520,3 +520,86 @@ Copy to clipboardCopy
 
 I'm setting an API Gateway for a monitoring solution. It is sending a massive amount of message from terminals to the API Gateway and triggering lambda functions which make inserts in a MongoDB database running in EC2
 
+
+# rdd and dataframes are immutable. (how we alter with withcolumns then)
+
+If dataframes in Spark are immutable, why are we able to modify it with operations such as withColumn()?
+
+![image](https://user-images.githubusercontent.com/6462531/170854273-fcd0974f-4ca2-4ac4-9be5-04a5ae0a3d85.png)
+
+As per Spark Architecture DataFrame is built on top of RDDs which are immutable in nature, Hence Data frames are immutable in nature as well.
+
+Regarding the withColumn or any other operation for that matter, when you apply such operations on DataFrames it will generate a new data frame instead of updating the existing data frame.
+
+However, When you are working with python which is dynamically typed language you overwrite the value of the previous reference. Hence when you are executing below statement
+
+    df = df.withColumn()
+
+It will generate another dataframe and assign it to reference "`df`".
+
+In order to verify the same, you can use `id()` method of rdd to get the unique identifier of your dataframe.
+
+`df.rdd.id()`
+
+ will give you unique identifier for your dataframe.
+
+I hope the above explanation helps.
+
+
+# What is Spark?
+
+https://medium.com/free-code-camp/how-to-use-spark-clusters-for-parallel-processing-big-data-86a22e7f8b50
+
+Spark uses Resilient Distributed Datasets (RDD) to perform parallel processing across a cluster or computer processors.
+
+Basically, Spark uses a cluster manager to coordinate work across a cluster of computers. A cluster is a group of computers that are connected and coordinate with each other to process data and compute.
+
+Spark applications consist of a driver process and executor processes.
+
+Briefly put, the driver process runs the main function, and analyzes and distributes work across the executors. The executors actually do the tasks assigned — executing code and reporting to the driver node.
+
+In real-world applications in business and emerging AI programming, parallel processing is becoming a necessity for efficiency, speed and complexity.
+
+![image](https://user-images.githubusercontent.com/6462531/170855342-19c3f8a5-fd95-4e42-b60a-5008a5d97bb2.png)
+
+# Great — so what is Databricks?
+It makes it easy to launch cloud-optimized Spark clusters in minutes.
+
+Think of it as an all-in-one package to write your code. You can use Spark (without worrying about the underlying details) and produce results.
+
+Follow the directions there. They are clear, concise and easy:
+
+- Create a cluster
+- Attach a notebook to the cluster and run commands in the notebook on the cluster
+- Manipulate the data and create a graph
+- Operations on Python DataFrame API; create a DataFrame from a Databricks dataset
+- Manipulate the data and display results
+
+
+A cluster, or group of machines, pools the resources of many machines together allowing us to use all the cumulative resources as if they were one. Now a group of machines alone is not powerful, you need a framework to coordinate work across them. Spark is a tool for just that, managing and coordinating the execution of tasks on data across a cluster of computers.
+
+
+Spark Application
+ 
+**A Spark Application consists of:**
+
+- Driver
+- Executors (set of distributed worker processes)
+
+**Driver**
+ 
+The Driver runs the main() method of our application having the following duties:
+
+- Runs on a node in our cluster, or on a client, and schedules the job execution with a cluster manager
+- Responds to user’s program or input
+- Analyzes, schedules, and distributes work across the executors
+
+Executors
+ 
+An executor is a distributed process responsible for the execution of tasks. Each Spark Application has its own set of executors, which stay alive for the life cycle of a single Spark application.
+
+- Executors perform all data processing of a Spark job
+- Stores results in memory, only persisting to disk when specifically instructed by the driver program
+- Returns results to the driver once they have been completed
+- Each node can have anywhere from 1 executor per node to 1 executor per core
+- ** Node is single entity machine or server .
