@@ -603,3 +603,100 @@ An executor is a distributed process responsible for the execution of tasks. Eac
 - Returns results to the driver once they have been completed
 - Each node can have anywhere from 1 executor per node to 1 executor per core
 - ** Node is single entity machine or server .
+
+
+
+# Installing spark on archlinux
+
+```
+yay  -S apache-spark
+
+# Java 17 isn't supported - Spark runs on Java 8/11 (source: https://spark.apache.org/docs/latest/).
+# So install Java 11 and point Spark to that.
+
+sudo pacman -S jre11-openjdk --needed --noconfirm
+
+# set java11 as the default 
+
+archlinux-java set java-11-openjdk
+
+# start spark-shell and check everything is working well
+
+$ spark-shell
+Picked up _JAVA_OPTIONS: -Dawt.useSystemAAFontSettings=on
+Picked up _JAVA_OPTIONS: -Dawt.useSystemAAFontSettings=on
+WARNING: An illegal reflective access operation has occurred
+WARNING: Illegal reflective access by org.apache.spark.unsafe.Platform (file:/opt/apache-spark/jars/spark-unsafe_2.12-3.2.0.jar) to constructor java.nio.DirectByteBuffer(long,int)
+WARNING: Please consider reporting this to the maintainers of org.apache.spark.unsafe.Platform
+WARNING: Use --illegal-access=warn to enable warnings of further illegal reflective access operations
+WARNING: All illegal access operations will be denied in a future release
+Using Spark's default log4j profile: org/apache/spark/log4j-defaults.properties
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+22/05/31 08:26:28 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+Spark context Web UI available at http://localhost:4040
+Spark context available as 'sc' (master = local[*], app id = local-1653965790738).
+Spark session available as 'spark'.
+Welcome to
+      ____              __
+     / __/__  ___ _____/ /__
+    _\ \/ _ \/ _ `/ __/  '_/
+   /___/ .__/\_,_/_/ /_/\_\   version 3.2.0
+      /_/
+         
+Using Scala version 2.12.15 (OpenJDK 64-Bit Server VM, Java 11.0.12)
+Type in expressions to have them evaluated.
+Type :help for more information.
+
+scala> 
+
+```
+
+goto http://localhost:4040
+
+## start master
+
+```
+# change permissions
+sudo chmod -R 777 /opt/apache-spark
+
+# start master
+/opt/apache-spark/sbin/start-master.sh
+starting org.apache.spark.deploy.master.Master, logging to /opt/apache-spark/logs/spark-simha-org.apache.spark.deploy.master.Master-1-gauranga.out
+
+# check log
+cat /opt/apache-spark/logs/spark-simha-org.apache.spark.deploy.master.Master-1-gauranga.out
+
+$ cat /opt/apache-spark/logs/spark-simha-org.apache.spark.deploy.master.Master-1-gauranga.out
+Picked up _JAVA_OPTIONS: -Dawt.useSystemAAFontSettings=on
+Spark Command: /usr/lib/jvm/default-runtime/bin/java -cp /opt/apache-spark/conf/:/opt/apache-spark/jars/* -Xmx1g org.apache.spark.deploy.master.Master --host gauranga --port 7077 --webui-port 8080
+========================================
+Picked up _JAVA_OPTIONS: -Dawt.useSystemAAFontSettings=on
+Using Spark's default log4j profile: org/apache/spark/log4j-defaults.properties
+22/05/31 08:20:11 INFO Master: Started daemon with process name: 685396@gauranga
+22/05/31 08:20:11 INFO SignalUtils: Registering signal handler for TERM
+22/05/31 08:20:11 INFO SignalUtils: Registering signal handler for HUP
+22/05/31 08:20:11 INFO SignalUtils: Registering signal handler for INT
+22/05/31 08:20:11 WARN MasterArguments: SPARK_MASTER_IP is deprecated, please use SPARK_MASTER_HOST
+WARNING: An illegal reflective access operation has occurred
+WARNING: Illegal reflective access by org.apache.spark.unsafe.Platform (file:/opt/apache-spark/jars/spark-unsafe_2.12-3.2.0.jar) to constructor java.nio.DirectByteBuffer(long,int)
+WARNING: Please consider reporting this to the maintainers of org.apache.spark.unsafe.Platform
+WARNING: Use --illegal-access=warn to enable warnings of further illegal reflective access operations
+WARNING: All illegal access operations will be denied in a future release
+22/05/31 08:20:12 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+22/05/31 08:20:12 INFO SecurityManager: Changing view acls to: simha
+22/05/31 08:20:12 INFO SecurityManager: Changing modify acls to: simha
+22/05/31 08:20:12 INFO SecurityManager: Changing view acls groups to: 
+22/05/31 08:20:12 INFO SecurityManager: Changing modify acls groups to: 
+22/05/31 08:20:12 INFO SecurityManager: SecurityManager: authentication disabled; ui acls disabled; users  with view permissions: Set(simha); groups with view permissions: Set(); users  with modify permissions: Set(simha); groups with modify permissions: Set()
+22/05/31 08:20:13 INFO Utils: Successfully started service 'sparkMaster' on port 7077.
+22/05/31 08:20:13 INFO Master: Starting Spark master at spark://gauranga:7077
+22/05/31 08:20:13 INFO Master: Running Spark version 3.2.0
+22/05/31 08:20:14 WARN Utils: Service 'MasterUI' could not bind on port 8080. Attempting port 8081.
+22/05/31 08:20:14 INFO Utils: Successfully started service 'MasterUI' on port 8081.
+22/05/31 08:20:14 INFO MasterWebUI: Bound MasterWebUI to localhost, and started at http://localhost:8081
+22/05/31 08:20:14 INFO Master: I have been elected leader! New state: ALIVE
+
+# check http://localhost:8081
+```
+![image](https://user-images.githubusercontent.com/6462531/171084270-0cd72561-0f12-4f61-9a26-57fc1b109c35.png)
