@@ -700,3 +700,74 @@ WARNING: All illegal access operations will be denied in a future release
 # check http://localhost:8081
 ```
 ![image](https://user-images.githubusercontent.com/6462531/171084270-0cd72561-0f12-4f61-9a26-57fc1b109c35.png)
+
+## pyspark
+
+https://www.bmc.com/blogs/jupyter-notebooks-apache-spark/
+
+There’s no need to install PySpark separately as it comes bundled with Spark.
+
+```
+$ pyspark
+Picked up _JAVA_OPTIONS: -Dawt.useSystemAAFontSettings=on
+Python 3.9.6 (default, Jun 30 2021, 10:22:16) 
+[GCC 11.1.0] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+Picked up _JAVA_OPTIONS: -Dawt.useSystemAAFontSettings=on
+Picked up _JAVA_OPTIONS: -Dawt.useSystemAAFontSettings=on
+WARNING: An illegal reflective access operation has occurred
+WARNING: Illegal reflective access by org.apache.spark.unsafe.Platform (file:/opt/apache-spark/jars/spark-unsafe_2.12-3.2.0.jar) to constructor java.nio.DirectByteBuffer(long,int)
+WARNING: Please consider reporting this to the maintainers of org.apache.spark.unsafe.Platform
+WARNING: Use --illegal-access=warn to enable warnings of further illegal reflective access operations
+WARNING: All illegal access operations will be denied in a future release
+Using Spark's default log4j profile: org/apache/spark/log4j-defaults.properties
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+22/05/31 09:05:23 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+Welcome to
+      ____              __
+     / __/__  ___ _____/ /__
+    _\ \/ _ \/ _ `/ __/  '_/
+   /__ / .__/\_,_/_/ /_/\_\   version 3.2.0
+      /_/
+
+Using Python version 3.9.6 (default, Jun 30 2021 10:22:16)
+Spark context Web UI available at http://localhost:4040
+Spark context available as 'sc' (master = local[*], app id = local-1653968125458).
+SparkSession available as 'spark'.
+>>> 
+```
+
+## pyspark and jupyter
+
+```
+export PYSPARK_DRIVER_PYTHON='jupyter'
+export PYSPARK_DRIVER_PYTHON_OPTS='notebook --no-browser --port=8889'
+pyspark
+
+Picked up _JAVA_OPTIONS: -Dawt.useSystemAAFontSettings=on
+[I 09:16:20.188 NotebookApp] Serving notebooks from local directory: /home/simha_personal_data/programming_arch_firefox/extra/Unsorted/vid/web_dev/hss_iqgateway/apache_spark/jupyter_notebooks
+[I 09:16:20.188 NotebookApp] Jupyter Notebook 6.3.0 is running at:
+[I 09:16:20.188 NotebookApp] http://localhost:8889/?token=1b42e18ede7dba65aaa6495a4ac45d18c70bacf6576206a1
+[I 09:16:20.188 NotebookApp]  or http://127.0.0.1:8889/?token=1b42e18ede7dba65aaa6495a4ac45d18c70bacf6576206a1
+[I 09:16:20.189 NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+[C 09:16:20.231 NotebookApp] 
+    
+    To access the notebook, open this file in a browser:
+        file:///home/simha/.local/share/jupyter/runtime/nbserver-758649-open.html
+    Or copy and paste one of these URLs:
+        http://localhost:8889/?token=1b42e18ede7dba65aaa6495a4ac45d18c70bacf6576206a1
+     or http://127.0.0.1:8889/?token=1b42e18ede7dba65aaa6495a4ac45d18c70bacf6576206a1
+```
+
+Now in jupyter we can access sc and spark session as
+
+![image](https://user-images.githubusercontent.com/6462531/171089204-c6e40c9e-dc7e-4a95-b172-f197e75f88a7.png)
+
+## first step in spark
+https://www.kaggle.com/code/masumrumi/a-pyspark-tutorial-with-titanic/notebook
+
+The first step in using Spark is connecting to a cluster. In practice, the cluster will be hosted on a remote machine that's connected to all other nodes. There will be one computer, called the master that manages splitting up the data and the computations. The master is connected to the rest of the computers in the cluster, which are called worker. The master sends the workers data and calculations to run, and they send their results back to the master.
+
+We definitely don't need may clusters for Titanic dataset. In addition to that, the syntax for running locally or using many clusters are pretty similar. To start working with Spark DataFrames, we first have to create a SparkSession object from SparkContext. We can think of the SparkContext as the connection to the cluster and SparkSession as the interface with that connection. Let's create a SparkSession.
+
