@@ -764,6 +764,88 @@ Now in jupyter we can access sc and spark session as
 
 ![image](https://user-images.githubusercontent.com/6462531/171089204-c6e40c9e-dc7e-4a95-b172-f197e75f88a7.png)
 
+## Another way to use jupyter and spark
+
+### start master
+
+```
+# change permissions
+sudo chmod -R 777 /opt/apache-spark
+
+# start master
+/opt/apache-spark/sbin/start-master.sh
+starting org.apache.spark.deploy.master.Master, logging to /opt/apache-spark/logs/spark-simha-org.apache.spark.deploy.master.Master-1-gauranga.out
+
+# check log
+cat /opt/apache-spark/logs/spark-simha-org.apache.spark.deploy.master.Master-1-gauranga.out
+
+$ cat /opt/apache-spark/logs/spark-simha-org.apache.spark.deploy.master.Master-1-gauranga.out
+Picked up _JAVA_OPTIONS: -Dawt.useSystemAAFontSettings=on
+Spark Command: /usr/lib/jvm/default-runtime/bin/java -cp /opt/apache-spark/conf/:/opt/apache-spark/jars/* -Xmx1g org.apache.spark.deploy.master.Master --host gauranga --port 7077 --webui-port 8080
+========================================
+Picked up _JAVA_OPTIONS: -Dawt.useSystemAAFontSettings=on
+Using Spark's default log4j profile: org/apache/spark/log4j-defaults.properties
+22/05/31 08:20:11 INFO Master: Started daemon with process name: 685396@gauranga
+22/05/31 08:20:11 INFO SignalUtils: Registering signal handler for TERM
+22/05/31 08:20:11 INFO SignalUtils: Registering signal handler for HUP
+22/05/31 08:20:11 INFO SignalUtils: Registering signal handler for INT
+22/05/31 08:20:11 WARN MasterArguments: SPARK_MASTER_IP is deprecated, please use SPARK_MASTER_HOST
+WARNING: An illegal reflective access operation has occurred
+WARNING: Illegal reflective access by org.apache.spark.unsafe.Platform (file:/opt/apache-spark/jars/spark-unsafe_2.12-3.2.0.jar) to constructor java.nio.DirectByteBuffer(long,int)
+WARNING: Please consider reporting this to the maintainers of org.apache.spark.unsafe.Platform
+WARNING: Use --illegal-access=warn to enable warnings of further illegal reflective access operations
+WARNING: All illegal access operations will be denied in a future release
+22/05/31 08:20:12 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+22/05/31 08:20:12 INFO SecurityManager: Changing view acls to: simha
+22/05/31 08:20:12 INFO SecurityManager: Changing modify acls to: simha
+22/05/31 08:20:12 INFO SecurityManager: Changing view acls groups to: 
+22/05/31 08:20:12 INFO SecurityManager: Changing modify acls groups to: 
+22/05/31 08:20:12 INFO SecurityManager: SecurityManager: authentication disabled; ui acls disabled; users  with view permissions: Set(simha); groups with view permissions: Set(); users  with modify permissions: Set(simha); groups with modify permissions: Set()
+22/05/31 08:20:13 INFO Utils: Successfully started service 'sparkMaster' on port 7077.
+22/05/31 08:20:13 INFO Master: Starting Spark master at spark://gauranga:7077
+22/05/31 08:20:13 INFO Master: Running Spark version 3.2.0
+22/05/31 08:20:14 WARN Utils: Service 'MasterUI' could not bind on port 8080. Attempting port 8081.
+22/05/31 08:20:14 INFO Utils: Successfully started service 'MasterUI' on port 8081.
+22/05/31 08:20:14 INFO MasterWebUI: Bound MasterWebUI to localhost, and started at http://localhost:8081
+22/05/31 08:20:14 INFO Master: I have been elected leader! New state: ALIVE
+```
+### install pyspark
+```
+pip install pyspark
+```
+
+### open jupyter notebook and then use spark
+https://www.hackdeploy.com/how-to-run-pyspark-in-a-jupyter-notebook/
+
+```
+The two last lines of code print the version of spark we are using.
+
+import os
+import pyspark
+from pyspark.sql import SQLContext, SparkSession
+sc = SparkSession \
+        .builder \
+        .master('spark://xxx.xxx.xx.xx:7077') \
+        .appName("sparkFromJupyter") \
+        .getOrCreate()
+sqlContext = SQLContext(sparkContext=sc.sparkContext, sparkSession=sc)
+print("Spark Version: " + sc.version)
+print("PySpark Version: " + pyspark.__version__)
+
+```
+
+### Run a Simple PySpark Command
+
+To test our installation we will run a very basic pyspark code. We will create a dataframe and then display it.
+
+```
+df = sqlContext.createDataFrame(
+    [(1, 'foo'),(2, 'bar')],#records
+    ['col1', 'col2']#column names
+)
+df.show()
+```
+
 ## first step in spark
 https://www.kaggle.com/code/masumrumi/a-pyspark-tutorial-with-titanic/notebook
 
