@@ -846,6 +846,14 @@ df = sqlContext.createDataFrame(
 df.show()
 ```
 
+### jupyter and spark
+https://opensource.com/article/18/11/pyspark-jupyter-notebook
+
+Tirthajyoti Sarkar
+Sr. Director of AI/ML platform | Stories on Artificial Intelligence, Data Science, and ML | Speaker, Open-source contributor, Author of multiple DS books
+
+https://github.com/tirthajyoti
+
 ## first step in spark
 https://www.kaggle.com/code/masumrumi/a-pyspark-tutorial-with-titanic/notebook
 
