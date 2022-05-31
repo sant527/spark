@@ -861,3 +861,306 @@ The first step in using Spark is connecting to a cluster. In practice, the clust
 
 We definitely don't need may clusters for Titanic dataset. In addition to that, the syntax for running locally or using many clusters are pretty similar. To start working with Spark DataFrames, we first have to create a SparkSession object from SparkContext. We can think of the SparkContext as the connection to the cluster and SparkSession as the interface with that connection. Let's create a SparkSession.
 
+# Various Entry Points for Apache Spark
+https://www.npntraining.com/blog/various-entry-points-for-apache-spark/
+
+In Spark 1.x, three entry points were introduced:
+
+1. SparkContext,
+2. SQLContext and
+3. HiveContext
+
+Since Spark 2.x, a new entry point called SparkSession has been introduced that essentially combined all functionalities available in the three aforementioned contexts. Note that all contexts are still available even in newest Spark releases, mostly for backward compatibility purposes.
+
+## Spark Context
+
+The Spark Context is used by the Driver Process of the Spark Application in order to establish a communication with the cluster and the resource managers in order to coordinate and execute jobs. SparkContext also enables the access to the other two contexts, namely SQLContext and HiveContext (more on these entry points later on).
+
+In order to create a SparkContext, you will first need to create a Spark Configuration
+
+```
+from pyspark import SparkContext, SparkConf
+conf = SparkConf().setAppName('app')
+.setMaster(master)
+sc = SparkContext(conf=conf)
+```
+
+Note : if you are using the spark-shell, SparkContext is already available through the variable called sc
+
+## SqlContext
+
+SQLContext is the entry point to SparkSQL which is a Spark module for structured data processing. Once SQLContext is initialized, the user can then use it in order to perform various “sql-like” operations over Datasets and Dataframes. In order to create a SQLContext, you first need to instantiate a SparkContext as shown below:
+
+```
+from pyspark import SparkContext, SparkConf
+from pyspark.sql import SQLContext
+conf = SparkConf().setAppName('app')
+.setMaster(master)
+sc = SparkContext(conf=conf)
+sql_context = SQLContext(sc)
+```
+
+## SparkSession
+
+Spark 2.0 introduced a new entry point called SparkSession that essentially replaced both SQLContext and HiveContext. Additionally, it gives to developers immediate access to SparkContext. In order to create a SparkSession with Hive support, all you have to do is
+
+```
+from pyspark.sql import SparkSession
+spark_session = SparkSession.builder.enableHiveSupport().getOrCreate()
+```
+
+Two ways you can access spark context from spark session
+
+```
+spark_context = spark_session._sc
+spark_context = spark_session.sparkContex
+```
+# How to Check Spark Version
+https://sparkbyexamples.com/spark/check-spark-version/
+
+## 1. Spark Version Check from Command Line
+
+```
+spark-submit --version
+spark-shell --version
+spark-sql --version
+```
+
+```
+$ spark-shell --version
+Picked up _JAVA_OPTIONS: -Dawt.useSystemAAFontSettings=on
+Picked up _JAVA_OPTIONS: -Dawt.useSystemAAFontSettings=on
+WARNING: An illegal reflective access operation has occurred
+WARNING: Illegal reflective access by org.apache.spark.unsafe.Platform (file:/opt/apache-spark/jars/spark-unsafe_2.12-3.2.0.jar) to constructor java.nio.DirectByteBuffer(long,int)
+WARNING: Please consider reporting this to the maintainers of org.apache.spark.unsafe.Platform
+WARNING: Use --illegal-access=warn to enable warnings of further illegal reflective access operations
+WARNING: All illegal access operations will be denied in a future release
+Welcome to
+      ____              __
+     / __/__  ___ _____/ /__
+    _\ \/ _ \/ _ `/ __/  '_/
+   /___/ .__/\_,_/_/ /_/\_\   version 3.2.0
+      /_/
+                        
+Using Scala version 2.12.15, OpenJDK 64-Bit Server VM, 11.0.12
+Branch HEAD
+Compiled by user ubuntu on 2021-10-06T12:46:30Z
+Revision 5d45a415f3a29898d92380380cfd82bfc7f579ea
+Url https://github.com/apache/spark
+Type --help for more information.
+```
+
+## 2. Version Check From Spark Shell
+
+Additionally, you are in spark-shell and you wanted to find out the spark version without exiting spark-shell, you can achieve this by using the sc.version. sc is a SparkContect variable that default exists in spark-shell
+
+```
+$ spark-shell          
+Picked up _JAVA_OPTIONS: -Dawt.useSystemAAFontSettings=on
+Picked up _JAVA_OPTIONS: -Dawt.useSystemAAFontSettings=on
+WARNING: An illegal reflective access operation has occurred
+WARNING: Illegal reflective access by org.apache.spark.unsafe.Platform (file:/opt/apache-spark/jars/spark-unsafe_2.12-3.2.0.jar) to constructor java.nio.DirectByteBuffer(long,int)
+WARNING: Please consider reporting this to the maintainers of org.apache.spark.unsafe.Platform
+WARNING: Use --illegal-access=warn to enable warnings of further illegal reflective access operations
+WARNING: All illegal access operations will be denied in a future release
+Using Spark's default log4j profile: org/apache/spark/log4j-defaults.properties
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+22/05/31 13:56:36 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+22/05/31 13:56:38 WARN Utils: Service 'SparkUI' could not bind on port 4040. Attempting port 4041.
+Spark context Web UI available at http://localhost:4041
+Spark context available as 'sc' (master = local[*], app id = local-1653985598610).
+Spark session available as 'spark'.
+Welcome to
+      ____              __
+     / __/__  ___ _____/ /__
+    _\ \/ _ \/ _ `/ __/  '_/
+   /___/ .__/\_,_/_/ /_/\_\   version 3.2.0
+      /_/
+         
+Using Scala version 2.12.15 (OpenJDK 64-Bit Server VM, Java 11.0.12)
+Type in expressions to have them evaluated.
+Type :help for more information.
+
+scala> sc.version
+res0: String = 3.2.0
+
+scala> spark.version
+res1: String = 3.2.0
+```
+
+# PySpark – What is SparkSession?
+https://sparkbyexamples.com/pyspark/pyspark-what-is-sparksession/
+
+Since Spark 2.0 SparkSession has become an entry point to PySpark to work with RDD, and DataFrame. Prior to 2.0, SparkContext used to be an entry point. Here, I will mainly focus on explaining what is SparkSession by defining and describing how to create SparkSession and using default SparkSession spark variable from pyspark-shell.
+
+- It’s object spark is default available in pyspark-shell and it can be created programmatically using SparkSession.
+- With Spark 2.0 a new class SparkSession (pyspark.sql import SparkSession) has been introduced.
+- SparkSession is a combined class for all different contexts we used to have prior to 2.0 release (SQLContext and HiveContext e.t.c).
+- Since 2.0 SparkSession can be used in replace with SQLContext, HiveContext, and other contexts defined prior to 2.0.
+- As mentioned in the beginning SparkSession is an entry point to PySpark and creating a SparkSession instance would be the first statement you would write to program with RDD, DataFrame, and Dataset. SparkSession will be created using SparkSession.builder builder patterns.
+
+- You should also know that SparkSession internally creates SparkConfig and SparkContext with the configuration provided with SparkSession.
+
+## How many SparkSessions can you create in a PySpark application?
+
+- You can create as many SparkSession as you want in a PySpark application using either SparkSession.builder() or SparkSession.newSession(). 
+- Many Spark session objects are required when you wanted to keep PySpark tables (relational entities) logically separated.
+
+## SparkSession in PySpark shell
+
+- Be default PySpark shell provides “spark” object; which is an instance of SparkSession class. We can directly use this object where required in spark-shell.
+
+## Create SparkSession
+- In order to create SparkSession programmatically (in .py file) in PySpark, you need to use the builder pattern method builder() as explained below. 
+- getOrCreate() method returns an already existing SparkSession; if not exists, it creates a new SparkSession.
+
+```
+# Create SparkSession from builder
+import pyspark
+from pyspark.sql import SparkSession
+spark = SparkSession.builder.master("local[1]") \
+                    .appName('SparkByExamples.com') \
+                    .getOrCreate()
+```
+
+- master() – If you are running it on the cluster you need to use your master name as an argument to master(). usually, it would be either yarn or mesos depends on your cluster setup.
+
+  - Use local[x] when running in Standalone mode. x should be an integer value and should be greater than 0; this represents how many partitions it should create when using RDD, DataFrame, and Dataset. Ideally, x value should be the number of CPU cores you have.
+- appName() – Used to set your application name.
+
+- getOrCreate() – This returns a SparkSession object if already exists, and creates a new one if not exist.
+
+Note:  SparkSession object spark is by default available in the PySpark shell.
+
+## Create Another SparkSession
+
+- You can also create a new SparkSession using newSession() method. This uses the same app name, master as the existing session. 
+- Underlying SparkContext will be the same for both sessions as you can have only one context per PySpark application.
+
+## Get Existing SparkSession
+- You can get the existing SparkSession in PySpark using the builder.getOrCreate(), for example.
+```
+# Get Existing SparkSession
+spark3 = SparkSession.builder.getOrCreate
+print(spark3)
+```
+
+## Using Spark Config
+- If you wanted to set some configs to SparkSession, use the config() method.
+```
+# Usage of config()
+spark = SparkSession.builder \
+      .master("local[1]") \
+      .appName("SparkByExamples.com") \
+      .config("spark.some.config.option", "config-value") \
+      .getOrCreate()
+```
+
+## Using PySpark Configs
+
+- Once the SparkSession is created, you can add the spark configs during runtime or get all configs.
+```
+# Set Config
+spark.conf.set("spark.executor.memory", "5g")
+
+# Get a Spark Config
+partions = spark.conf.get("spark.sql.shuffle.partitions")
+print(partions)
+```
+
+## Create PySpark DataFrame
+
+- SparkSession also provides several methods to create a Spark DataFrame and DataSet. 
+- The below example uses the createDataFrame() method which takes a list of data.
+```
+# Create DataFrame
+df = spark.createDataFrame(
+    [("Scala", 25000), ("Spark", 35000), ("PHP", 21000)])
+df.show()
+
+# Output
+#+-----+-----+
+#|   _1|   _2|
+#+-----+-----+
+#|Scala|25000|
+#|Spark|35000|
+#|  PHP|21000|
+#+-----+-----+
+```
+
+## Working with Spark SQL
+
+- Using SparkSession you can access PySpark/Spark SQL capabilities in PySpark.
+- In order to use SQL features first, you need to create a temporary view in PySpark. 
+- Once you have a temporary view you can run any ANSI SQL queries using spark.sql() method.
+```
+# Spark SQL
+df.createOrReplaceTempView("sample_table")
+df2 = spark.sql("SELECT _1,_2 FROM sample_table")
+df2.show()
+```
+- PySpark SQL temporary views are session-scoped and will not be available if the session that creates it terminates.
+- If you want to have a temporary view that is shared among all sessions and keep alive until the Spark application terminates
+- you can create a global temporary view using `createGlobalTempView()`
+
+## Create Hive Table
+
+- As explained above SparkSession is used to create and query Hive tables. 
+- Note that in order to do this for testing you don’t need Hive to be installed. 
+- saveAsTable() creates Hive managed table. Query the table using spark.sql().
+
+```
+# Create Hive table & query it.  
+spark.table("sample_table").write.saveAsTable("sample_hive_table")
+df3 = spark.sql("SELECT _1,_2 FROM sample_hive_table")
+df3.show()
+```
+
+## Working with Catalogs
+- To get the catalog metadata, PySpark Session exposes catalog variable.
+- Note that these methods spark.catalog.listDatabases and spark.catalog.listTables and returns the DataSet.
+
+```
+# Get metadata from the Catalog
+# List databases
+dbs = spark.catalog.listDatabases()
+print(dbs)
+
+# Output
+#[Database(name='default', description='default database', 
+#locationUri='file:/Users/admin/.spyder-py3/spark-warehouse')]
+
+# List Tables
+tbls = spark.catalog.listTables()
+print(tbls)
+
+#Output
+#[Table(name='sample_hive_table', database='default', description=None, tableType='MANAGED', #isTemporary=False), Table(name='sample_hive_table1', database='default', description=None, #tableType='MANAGED', isTemporary=False), Table(name='sample_hive_table121', database='default', #description=None, tableType='MANAGED', isTemporary=False), Table(name='sample_table', database=None, #description=None, tableType='TEMPORARY', isTemporary=True)]
+```
+# What is Spark SQL?
+
+- Spark SQL integrates relational processing with Spark’s functional programming. It provides support for various data sources and makes it possible to weave SQL queries with code transformations thus resulting in a very powerful tool.
+
+# Why is Spark SQL used?
+```
+Spark SQL originated as Apache Hive to run on top of Spark and is now integrated with the Spark stack. Apache Hive had certain limitations as mentioned below. Spark SQL was built to overcome these drawbacks and replace Apache Hive.
+```
+
+# Is Spark SQL faster than Hive?
+
+Spark SQL is faster than Hive when it comes to processing speed. Below I have listed down a few limitations of Hive over Spark SQL.
+
+### Limitations With Hive:
+- Hive launches MapReduce jobs internally for executing the ad-hoc queries. MapReduce lags in the performance when it comes to the analysis of medium-sized datasets (10 to 200 GB).
+- Hive has no resume capability. This means that if the processing dies in the middle of a workflow, you cannot resume from where it got stuck.
+- Hive cannot drop encrypted databases in cascade when the trash is enabled and leads to an execution error. To overcome this, users have to use the Purge option to skip trash instead of drop. 
+
+These drawbacks gave way to the birth of Spark SQL. But the question which still pertains in most of our minds is,
+
+## Stucture
+
+- With Spark SQL, Apache Spark is accessible to more users and improves optimization for the current ones. 
+- Spark runs on both Windows and UNIX-like systems (e.g. Linux, Microsoft, Mac OS). It is easy to run locally on one machine — all you need is to have java installed on your system PATH, or the JAVA_HOME environment variable pointing to a Java installation.
+
+![image](https://user-images.githubusercontent.com/6462531/171136153-6174c073-20f4-44a3-b10d-e569e33d7b22.png)
