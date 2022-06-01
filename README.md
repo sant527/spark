@@ -1164,3 +1164,237 @@ These drawbacks gave way to the birth of Spark SQL. But the question which still
 - Spark runs on both Windows and UNIX-like systems (e.g. Linux, Microsoft, Mac OS). It is easy to run locally on one machine — all you need is to have java installed on your system PATH, or the JAVA_HOME environment variable pointing to a Java installation.
 
 ![image](https://user-images.githubusercontent.com/6462531/171136153-6174c073-20f4-44a3-b10d-e569e33d7b22.png)
+
+# RDD vs Dataframe vs Dataset
+
+Initially, in 2011 in they came up with the concept of RDDs, then in 2013 with Dataframes and later in 2015 with the concept of Datasets. None of them has been depreciated, we can still use all of them. In this article, we will understand and see the difference between all three of them.
+
+![image](https://user-images.githubusercontent.com/6462531/171312975-27a3123e-4063-479c-83d0-9cd3daad31c9.png)
+
+## What are RDDs?
+RDDs or Resilient Distributed Datasets is the fundamental data structure of the Spark. It is the collection of objects which is capable of storing the data partitioned across the multiple nodes of the cluster and also allows them to do processing in parallel.
+
+It is fault-tolerant if you perform multiple transformations on the RDD and then due to any reason any node fails. The RDD, in that case, is capable of recovering automatically.
+
+### There are 3 ways of creating an RDD:
+1. Parallelizing an existing collection of data
+2. Referencing to the external data file stored
+3. Creating RDD from an already existing RDD
+
+```
+# parallelizing data collection
+my_list = [1, 2, 3, 4, 5]
+my_list_rdd = sc.parallelize(my_list)
+
+## 2. Referencing to external data file
+file_rdd = sc.textFile("path_of_file")
+```
+
+### When to use RDDs?
+We can use RDDs in the following situations-
+
+- When we want to do low-level transformations on the dataset. Read more about RDD Transformations: PySpark to perform Transformations
+- It does not automatically infer the schema of the ingested data, we need to specify the schema of each and every dataset when we create an RDD. Learn how to infer the schema to the RDD here: Building Machine Learning Pipelines using PySpark
+
+### What are Dataframes?
+It was introduced first in Spark version 1.3 to overcome the limitations of the Spark RDD. Spark Dataframes are the distributed collection of the data points, but here, the data is organized into the named columns. They allow developers to debug the code during the runtime which was not allowed with the RDDs.
+
+Dataframes can read and write the data into various formats like CSV, JSON, AVRO, HDFS, and HIVE tables. It is already optimized to process large datasets for most of the pre-processing tasks so that we do not need to write complex functions on our own.
+
+It uses a catalyst optimizer for optimization purposes. If you want to read more about the catalyst optimizer I would highly recommend you to go through this article: Hands-On Tutorial to Analyze Data using Spark SQL
+
+```
+spark.createDataFrame(
+    [
+        (1, 'Lakshay'), # create your data here, make sure to be consistent in the types.
+        (2, 'Aniruddha'),
+        .
+        .
+        .
+        .
+        (100, 'Siddhart')
+    ],
+    ['id', 'Name'] # add your columns label here
+)
+```
+
+### What are Datasets?
+
+Spark Datasets is an extension of Dataframes API with the benefits of both RDDs and the Datasets. It is fast as well as provides a type-safe interface. Type safety means that the compiler will validate the data types of all the columns in the dataset while compilation only and will throw an error if there is any mismatch in the data types.
+
+![image](https://user-images.githubusercontent.com/6462531/171313852-0c2b942c-01ca-4a82-be7d-6ec9caa3ac61.png)
+
+
+### Why do we need Spark Dataset?
+To have a clear understanding of Dataset, we must begin with a bit of the history of spark and evolution.
+
+RDD is the core of Spark. Inspired by SQL and to make things easier, Dataframe was created on top of RDD. Dataframe is equivalent to a table in a relational database or a DataFrame in Python.
+
+RDD provides compile-time type safety, but there is an absence of automatic optimization in RDD.
+
+Dataframe provides automatic optimization, but it lacks compile-time type safety.
+
+Dataset is added as an extension of the Dataframe. Dataset combines both RDD features (i.e. compile-time type safety ) and Dataframe (i.e. Spark SQL automatic optimization ).
+
+> [RDD(Spark 1.0)] -> [Dataframe(Spark1.3)] -> [Dataset(Spark1.6)]
+
+> As Dataset has compile-time safety, it is only supported in a compiled language( Java & Scala ) but not in an interpreted language(R & Python). But Spark Dataframe API is available in all four languages( Java, Scala, Python & R ) supported by Spark.
+
+
+# Introduction to Spark SQL Dataframe
+Spark SQL Dataframe is the distributed dataset that stores as a tabular structured format. Dataframe is similar to RDD or resilient distributed dataset for data abstractions. The Spark data frame is optimized and supported through the R language, Python, Scala, and Java data frame APIs. The Spark SQL data frames are sourced from existing RDD, log table, Hive tables, and Structured data files and databases. Spark uses select and filters query functionalities for data analysis. Spark SQL Dataframe supports fault tolerance, in-memory processing as an advanced feature. Spark SQL Dataframes are highly scalable that can process very high volumes of data.
+
+The different sources which generate a dataframe are-
+1. Existing RDD
+2. Structured data files and databases
+3. Hive Tables
+
+## How to Create Spark SQL Dataframe?
+Before understanding ways of creating a dataframe it is important to understand another concept by which spark applications create dataframe from different sources. This concept is known as sparksession and is the entry point for all the spark functionality. Earlier we had to create sparkConf, sparkContext or sqlContext individually but with sparksession, all are encapsulated under one session where spark acts as a sparksession object.
+
+```
+val spark = SparkSession
+.builder()
+.appName("SampleWork")
+.config("config.option", "value")
+.getOrCreate()
+```
+
+### Ways of creating a Spark SQL Dataframe
+
+1. From Existing RDD
+
+    There are two ways in which a Dataframe can be created through RDD. One way is using reflection which automatically infers the schema of the data and the other approach is to create a schema programmatically and then apply to the RDD.
+    
+    1. By Inferring the Schema
+
+    2. By programmatically specifying the Schema
+
+2. Through Data Sources
+
+Spark allows the creation of dataframes through multiple sources such as hive, json, parquet, csv and text files that can also be used to create dataframes.
+
+
+### DataFrame Operations
+As the data is stored in a tabular format along with the schema, there are a number of operations that can be performed on the dataframes. It allows multiple operations that can be performed on data in dataframes.
+
+Consider file is a dataframe which has been created from a csv file with two columns – FullName and AgePerPA
+
+1. printSchema()- To view the schema structure
+```
+file.printSchema()
+// |-- AgePerPA: long (nullable = true)
+// |-- FullName: string (nullable = true)
+```
+2. select- Similar to select statement in SQL, showcases the data as mentioned in the select statement.
+```
+file.select("FullName").show()
+// +-------+
+// |   name|
+// +-------+
+// |Sam|
+// |Jodi|
+// | Bala|
+// +-------+
+```
+3. Filter- To view the filtered data from the dataframe. The condition mentioned in the command
+```
+file.filter($"AgePerPA" > 18).show()
+```
+4. GroupBy- To groupby the values
+```
+file.groupBy("AgePerPA").count().show()
+```
+5. show()- to display the contents of dataframe
+```
+file.show()
+```
+
+## Limitations
+Though with dataframes you can catch SQL syntax error at compile time itself, it is not capable of handling any analysis related error until runtime. For example, if a non-existing column name is being refered in the code it won’t be noticed until runtime. This would lead to wasting the developer’s time and project cost.
+
+## Conclusion
+This article gives an overall picture(need, creation, limitations) about the dataframe API of Spark SQL. Due to the popularity of dataframe APIs Spark SQL remains one of the widely used libraries. Just like an RDD, it provides features like fault tolerance, lazy evaluation, in-memory processing along with some additional benefits. It can be defined as data distributed across the cluster in a tabular form. Thus a data frame will have a schema associated with it and can be created through multiple sources via spark session object.
+
+
+# A PySpark Example for Dealing with Larger than Memory Datasets
+
+- Ubuntu VM of 3GB ram
+- 4.2 GB csv data
+
+Procedure:
+
+## creating a local SparkSession :
+
+```
+from pyspark.sql import SparkSession
+sc = SparkSession.builder.master("local").appName("Test").getOrCreate()
+```
+
+## read the data from my large csv file inside my SparkSession using sc.read
+
+Trying to load a 4.2 GB file on a VM with only 3 GB of RAM does not issue any error as Spark does not actually attempt to read the data unless some type of computation is required.
+
+```
+raw_data = sc.read.options(delimiter="\t",header=True).csv("en.openfoodfacts.org.products.csv")
+```
+
+- The result is a `pyspark.sql.dataframe` variable
+- It is important to keep in mind that at this point the data is not actually loaded into the RAM memory. Data is only loaded when an action is called on the pyspark variable, an action that needs to return a computed value. 
+- If I ask for instance for a count of the number of products in the data set, Spark is smart enough not to try and load the whole 4.2 GB of data in order to compute this value (almost 2 million products).
+
+## printSchema
+
+I used the printSchema function from pyspark in order to get some information about the structure of the data: the columns and their associated type :
+```
+raw_data.count()
+raw_data.printSchema()
+```
+![image](https://user-images.githubusercontent.com/6462531/171317885-4fc42434-00aa-45c4-b819-ce4988e054af.png)
+
+To start the exploratory analysis I computed the number of products per country to get an idea about the database composition :
+
+```
+from pyspark.sql.functions import col
+BDD_countries = raw_data.groupBy("countries_tags").count().persist()
+```
+
+BDD_countries is also a pyspark data frame and has the following structure :
+
+```
+BDD_countries.printSchema()
+```
+
+![image](https://user-images.githubusercontent.com/6462531/171318344-65e941f4-7383-45c2-b933-ca4762c270cb.png)
+
+I can filter this new data frame to keep only the countries that have at least 5000 products recorded in the database and plot the result :
+
+```
+BDD_res = BDD_countries.filter(col("count") > 5000).orderBy("count",ascending = False).toPandas()
+```
+
+![image](https://user-images.githubusercontent.com/6462531/171318401-bd650fe2-ecd3-48a4-a7b1-dd27b487b76e.png)
+
+# pandas vs spark
+
+It is quite common, that data scientists and analysts often choose Python library Pandas for the data exploration and transformations due to its nice, rich, and user-friendly API. Pandas library provides DataFrame implementation and it is really very convenient when the data volume fits into the memory of a single machine. With a bigger dataset, this may no longer be the best option and the power of distributed systems such as Apache Spark becomes very helpful. Indeed Apache Spark became a standard for data analysis in the big data environment.
+
+# Analyzing Stack Overflow Dataset with Apache Spark 3.0
+https://towardsdatascience.com/analyzing-stack-overflow-dataset-with-apache-spark-3-0-39786c141829
+
+In this article, we will see a step-by-step approach to an analysis of a specific dataset, namely the `dump from the Stack Overflow database`. The goal of this article is not to carry out an exhaustive analysis with some specific conclusions, but rather to show how such an analysis can be done with Apache Spark and the AWS stack — EMR, S3, EC2. 
+
+We will show here all the steps starting with the data download from the Stack Exchange archive, 
+- upload to S3
+- basic preprocessing of the data up to the final analysis with Spark 
+- including some nice charts plotted with Matplotlib and Pandas.
+
+- We will see here a very common pattern for data analysis of big datasets using Spark and the Python ecosystem. 
+
+**This pattern has three steps**, 
+- first, read the data with Spark, 
+- second do some processing that will reduce the data size — this might be some filtering, aggregation, or even sampling of the data and 
+- finally convert the reduced dataset into a Pandas DataFrame and 
+    - continue the analysis in Pandas that allows you to plot charts with Matplotlib used under the hood.
+
+
