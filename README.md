@@ -1397,4 +1397,200 @@ We will show here all the steps starting with the data download from the Stack E
 - finally convert the reduced dataset into a Pandas DataFrame and 
     - continue the analysis in Pandas that allows you to plot charts with Matplotlib used under the hood.
 
+**Let’s see all the steps that we will carry out:**
+
+1. Download the data dump from the Stack Exchange archive (it is a 7z compressed XML file)
+2. Decompress the downloaded file
+3. Upload the file to S3 (distributed object store on AWS)
+4. Convert the XML file to Apache Parquet format (save the Parquet on S3 again)
+5. Analyze the dataset
+
+For steps 1–3 we will use one EC2 instance with a larger disk. For steps 4 and 5 we will deploy an EMR cluster on AWS with Spark 3.0 and JupyterLab.
+
+## The Dataset
+- the Posts dataset that has 16.9 GB in the compressed XML (this is as of December 2021).
+- After the decompression, the size increases to 85.6 GB.
+
+The Posts that we will work with contain the list of all questions and their answers and we can distinguish between them based on the `_Post_type_id`, where the value 1 stands for a question and the value 2 stands for an answer.
+
+## Data Download and Decompression
+To download the data from the Stack Exchange archive we will use EC2 instance t2.large with 200 GB disk space.
+- instance type, going with the t2.large works fine
+- in the Add Storage tab add a disk volume. You need to specify the size for the disk, I choose 200 GB, but a smaller disk should be fine as well. Just remember that the dataset will have nearly 90 GB after decompression.
+- Finally, to launch the instance you will need to have an EC2 key pair and if you already don’t have one, you can go ahead and generate it. 
+- After the instance is running, you can ssh to it from your terminal using your key (you need to be in the same folder where you downloaded the key):
+
+```
+ssh -i key.pem ubuntu@<the ip address of your instance>
+```
+
+Then, on the console, install pip3 and p7zip (the first one is the package management system for Python3 that we will use for installing 2 Python packages and the second one is for decompressing the 7z file):
+
+```
+sudo apt update
+sudo apt install python3-pip
+sudo apt install p7zip-full
+```
+
+and next install Python packages requests and boto3 that we will use for the data download and S3 upload:
+
+```
+pip3 install boto3
+pip3 install requests
+```
+
+then create a new file using vi data_download.py and copy there the following Python code
+
+```
+url = 'https://archive.org/download/stackexchange/stackoverflow.com-Posts.7z'
+local_filename =  'posts.7z'
+with requests.get(url, stream=True) as r:
+  r.raise_for_status()
+  with open(local_filename, 'wb') as f:
+    for chunk in r.iter_content(chunk_size=8192):
+      if chunk:
+        f.write(chunk)
+```
+
+then save it (press esc key and use :wq command) and run it using python3 data_download.py. The data download itself may take a while since, as mentioned above, the file has nearly 17 GB. Next decompress the file using
+
+```
+7z x /home/ubuntu/posts.7z
+```
+
+After that, create yet another python file vi upload_to_s3.py, and copy there the code for the data upload to S3:
+
+```
+from boto3.session import *
+import os
+
+access_key = '...'
+secret_key = '...'
+bucket = '...'
+
+s3_output_prefix = '...'
+session = Session(
+  aws_access_key_id=access_key, 
+  aws_secret_access_key=secret_key
+)
+s3s = session.resource('s3').Bucket(bucket)
+
+local_input_prefix = '/home/ubuntu'
+file_name = 'Posts.xml'
+input_path = os.path.join(local_input_prefix, file_name)
+output_path = os.path.join(s3_output_prefix, file_name)
+s3s.upload_file(input_path, output_path)
+```
+
+As you can see in the code, you need to fill in the credentials for S3 (access_key and secret_key), the name of your bucket, and the s3_output_prefix which is the final destination where the file will be uploaded. If you don’t have the access_key and secret_key, you can generate them (see the docs). And if you don’t have a bucket, you can create it.
+
+## Data Preprocessing
+
+Having the data downloaded from the archive and stored on S3 we will now do some basic preprocessing to have the data prepared for analytical queries. More specifically we will convert the format from XML to Apache Parquet and rename/re-type the columns to a more convenient format.
+
+## Launching EMR cluster
+
+## Coversion to Parquet format
+
+Having the EMR cluster running with Spark and Jupyter we can start working with the data. The first step that we will do is to convert the format from the original XML to Apache Parquet, which is much more convenient for analytical queries in Spark. To read the XML in Spark SQL we will use the spark-xml package that allows us to specify the format xml and read the data into a DataFrame
+
+```
+posts_input_path = 's3://...'
+posts_output_path = 's3://...'
+
+(
+    spark
+    .read
+    .format('xml')
+    .option('samplingRatio', 0.01)
+    .option('rowTag', 'row')
+    .load(posts_input_path)
+    .select(
+        col('_Id').alias('id'),
+        (col('_CreationDate').cast('timestamp')).alias('creation_date'),
+        col('_Title').alias('title'),
+        col('_Body').alias('body'),
+        col('_commentCount').alias('comments'),
+        col('_AcceptedAnswerId').alias('accepted_answer_id'),
+        col('_AnswerCount').alias('answers'),
+        col('_FavoriteCount').alias('favorite_count'),
+        col('_OwnerDisplayName').alias('owner_display_name'),
+        col('_OwnerUserId').alias('user_id'),
+        col('_ParentId').alias('parent_id'),
+        col('_PostTypeId').alias('post_type_id'),
+        col('_Score').alias('score'),
+        col('_Tags').alias('tags'),
+        col('_ViewCount').alias('views')
+    )
+    .write
+    .mode('overwrite')
+    .format('parquet')
+    .option('path', posts_output_path)
+    .save()
+)
+```
+
+As part of this ETL process, we also renamed all the columns to snake-case style and cast the creation_date column to TimestampType. After converting the data to Parquet, the size was reduced from 85.6 GB to 30 GB which is due to the Parquet compression and also because we didn’t include all columns in the final Parquet.
+
+## Data Analysis
+
+### 1. Compute the counts
+Let’s compute the following interesting counts:
+
+1. How many questions do we have
+2. How many answers are there
+3. How many questions have accepted answer
+4. How many users asked or answered a question
+
+```
+posts_path = 's3://...'
+
+posts_all = spark.read.parquet(posts_path)
+
+posts = posts_all.select(
+    'id',
+    'post_type_id',
+    'accepted_answer_id',
+    'user_id',
+    'creation_date',
+    'tags'
+).cache()
+
+posts.count()
+
+questions = posts.filter(col('post_type_id') == 1)
+answers = posts.filter(col('post_type_id') == 2)
+
+questions.count()
+answers.count()
+questions.filter(col('accepted_answer_id').isNotNull()).count()
+posts.filter(col('user_id').isNotNull()).select('user_id').distinct().count()
+```
+
+In the code above we first read all the posts, but select only specific columns that will be needed also in further analysis and we cache that, which will be quite convenient because we will reference the dataset in all queries. Then we split the posts into two DataFrames based on the post_type_id because the value 1 represents questions and the value 2 represents answers. The total number of posts leads to 53 949 886 where 21 641 802 are questions and 32 199 928 are answers (there are also other types of posts in the dataset). When filtering for questions where accepted_answer_id is not null we get the number of questions that have an accepted answer and it is 11 138 924. Deduplicating the dataset on the user_id column we get the total count of users that asked or answered a question which is 5 404 321.
+
+## 2. Compute the response time
+
+We define the response time here as the time that passed since a question was asked until it was answered with an answer that was accepted. In the code below you can see that we need to join questions with answers so we can compare the creation date of a question with the creation date of its accepted answer:
+
+```
+response_time = (
+    questions.alias('questions')
+    .join(answers.alias('answers'), col('questions.accepted_answer_id') == col('answers.id'))
+    .select(
+        col('questions.id'),
+        col('questions.creation_date').alias('question_time'),
+        col('answers.creation_date').alias('answer_time')
+    )
+    .withColumn('response_time', unix_timestamp('answer_time') - unix_timestamp('question_time'))
+    .filter(col('response_time') > 0)
+    .orderBy('response_time')
+)
+
+response_time.show(truncate=False)
+```
+
+When sorting the data by the response time, we can see that the fastest accepted answers came within one second and you might be wondering how it is possible that someone could answer a question so quickly. I checked some of these questions explicitly and found out that these questions were answered by the same user that posted the question so apparently he/she knew the answer and posted it together with the question.
+
+Converting the response time from seconds to hours and aggregating we can display how many questions were answered in each hour after they were posted.
 
